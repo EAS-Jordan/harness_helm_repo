@@ -18,14 +18,6 @@ pipeline:
         type: Deployment
         spec:
           deploymentType: NativeHelm
-          service:
-            serviceRef: kanban_app
-            serviceInputs:
-              serviceDefinition:
-                type: NativeHelm
-                spec:
-                  manifestConfigurations:
-                    primaryManifestRef: <+input>
           environment:
             environmentRef: dev
             deployToAll: false
@@ -47,6 +39,21 @@ pipeline:
                   type: HelmRollback
                   timeout: 10m
                   spec: {}
+          services:
+            values:
+              - serviceRef: kanban_app
+                serviceInputs:
+                  serviceDefinition:
+                    type: NativeHelm
+                    spec:
+                      manifestConfigurations:
+                        primaryManifestRef: <+input>
+              - serviceRef: kanban_ui
+              - serviceRef: kanban_adminer
+              - serviceRef: kanban_postgres
+              - serviceRef: kanban_ingress
+            metadata:
+              parallel: true
         tags: {}
         failureStrategies:
           - onFailure:
