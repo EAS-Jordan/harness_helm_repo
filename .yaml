@@ -1,0 +1,63 @@
+pipeline:
+  name: Helm Deploy
+  identifier: Helm_Deploy
+  projectIdentifier: At_the_Helm
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: HelmRepo
+        build: <+input>
+        sparseCheckout: []
+  stages:
+    - stage:
+        name: Deploy
+        identifier: Deploy
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: NativeHelm
+          environment:
+            environmentRef: dev
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: dev
+          execution:
+            steps:
+              - step:
+                  name: Helm Deployment
+                  identifier: helmDeployment
+                  type: HelmDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+            rollbackSteps:
+              - step:
+                  name: Helm Rollback
+                  identifier: helmRollback
+                  type: HelmRollback
+                  timeout: 10m
+                  spec: {}
+          services:
+            values:
+              - serviceRef: kanban_app
+                serviceInputs:
+                  serviceDefinition:
+                    type: NativeHelm
+                    spec:
+                      manifestConfigurations:
+                        primaryManifestRef: <+input>
+              - serviceRef: kanban_ui
+              - serviceRef: kanban_adminer
+              - serviceRef: kanban_postgres
+              - serviceRef: kanban_ingress
+            metadata:
+              parallel: true
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
